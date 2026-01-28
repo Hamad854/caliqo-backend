@@ -172,7 +172,7 @@ JSON Schema:
 }
 `;
 
-  const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-3-pro-preview";
+  const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-3-flash-preview";
 
   try {
     const apiResponse = await fetch(
