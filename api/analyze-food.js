@@ -14,15 +14,22 @@ export default async function handler(req, res) {
 const prompt = `
 You are an AI food recognition engine used by a mobile nutrition app.
 Rules:
-- Identify only visible food items
-- Do NOT estimate calories or macros
-- Do NOT explain anything
-- Return ONLY valid JSON
-- Do NOT include any markdown, code blocks, or extra text
-Format (strict JSON):
+- Identify only visible food items from the image.
+- For each item, estimate approximate macros per typical serving (in grams for protein, carbs, fat).
+- Use realistic estimates based on common knowledge (do NOT say zero unless truly zero).
+- Do NOT explain anything or add extra text.
+- Return ONLY valid JSON (no markdown, no code blocks, no extra characters).
+- If confidence low, still include but set confidence < 0.6.
+Strict JSON format:
 {
   "items": [
-    { "label": "Food name", "confidence": 0.0 }
+    {
+      "label": "Common food name",
+      "confidence": 0.0,
+      "protein_g": 0.0,
+      "carbs_g": 0.0,
+      "fat_g": 0.0
+    }
   ]
 }
 `;
@@ -49,9 +56,29 @@ const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-2.5-flash";
             }
           ],
           generationConfig: {
-          response_mime_type: "application/json"   // <--- Yeh add karo (sabse important)
-          // Optional: temperature low rakh sakte ho for consistency
-          // temperature: 0.2,
+          response_mime_type: "application/json",
+          response_schema: {
+    type: "OBJECT",
+    properties: {
+      items: {
+        type: "ARRAY",
+        items: {
+          type: "OBJECT",
+          properties: {
+            label: { type: "STRING" },
+            confidence: { type: "NUMBER" },
+            protein_g: { type: "NUMBER" },
+            carbs_g: { type: "NUMBER" },
+            fat_g: { type: "NUMBER" }
+          },
+          required: ["label", "confidence", "protein_g", "carbs_g", "fat_g"]
+        }
+      }
+    },
+    required: ["items"]
+  },
+  temperature: 0.1  // low for consistency
+            
         }
         })
       }
